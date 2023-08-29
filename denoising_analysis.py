@@ -17,13 +17,8 @@ from haar_transform.haar_tranform import HaarTransform
 
 #%% support functions
 
-def spc_shrink():
-    
-    # alice treshholding
-    
-    return
 
-def hard_tresholding(N, details, level, type_threshold, type_thresholding):
+def tresholding(N, details, level, type_threshold, type_thresholding):
     
     if type_threshold == 'minimax':
         threshold = minimax_threshold(N, details)
@@ -31,7 +26,8 @@ def hard_tresholding(N, details, level, type_threshold, type_thresholding):
         threshold = universal_threshold(N, details)
     elif type_threshold == 'universal':
         threshold = han_etal_threshold(N, details, level)
-    
+    elif type_threshold == 'alice':
+        spc_shrink(details)
     
     if type_thresholding == 'hard':
         return_value = details
@@ -40,8 +36,6 @@ def hard_tresholding(N, details, level, type_threshold, type_thresholding):
         return_value = (details / np.abs(details)) * (
             np.abs(details) - threshold
         )
-        
-        
         
     details = np.where(
         np.abs(details) >= threshold, 
@@ -75,6 +69,37 @@ def han_etal_threshold(N, details, level, L):
     
     return threshold
 
+def spc_shrink(details, coef_d = 1.9086049):
+    
+    # padrao alpha = 1%
+    
+    # alice treshholding
+    
+    data = np.copy(details)
+    
+    keep_calculating = True
+    
+    N = len(data)
+    mean_wavelet = np.mean(data)
+
+    while keep_calculating:
+        
+        deviation_s = np.sqrt(
+                (1 / (N - 1)) * np.sum(np.square(data - mean_wavelet))
+            )
+        
+        LCL = - coef_d * deviation_s
+        UCL = coef_d * deviation_s
+    
+        data = data[(data >= LCL) & (data <= UCL)]
+    
+        if len(data) == N:
+            keep_calculating = False
+        else:
+            N = len(data)
+    
+    return coef_d * deviation_s
+
 def sigma(details):
     
     mean_detail = np.median(details)
@@ -82,9 +107,29 @@ def sigma(details):
     sigma = 1.4826 * np.median(details - mean_detail)
     
     return sigma
-# acho que vou fazer a filtragem com uma
-# classe que possui o vetor de haaar transformado
-# e aí tem metodos tipo 
+
+#%%
+
+def SNR_article (signal, noise):
+    
+    deviation_signal = np.std(noise)
+    
+    amplitude = signal  # have to get aplitude ofpeak to peak
+    
+    #     For the sake of the SNR calcula-
+    # tion only, the estimation of the standard deviation of the noise was
+    # conceived as the median of the standard deviations computed on
+    # each interval between two foetal beats. This approach considers
+    # the presence of both the noise and potential residual mECG (the
+    # latter only in the real dataset).
+    
+    # Moreover, before the WD, we computed the Appf of a given sig-
+    # nal on its average QRS complex, obtained by synchronized averag-
+    # ing, to reduce the inter-beat variability. 
+    
+    snr_values = 20 * np.log(amplitude /  4 * deviation_signal)
+    
+    return snr_values
 #%% Contants / parameters
 
 PATH = '/home/julia/Documents/temp_julia/denoising_analysis/data'
