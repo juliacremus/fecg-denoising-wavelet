@@ -16,6 +16,25 @@ from scipy.signal import find_peaks
 
 from haar_transform.haar_tranform import HaarTransform
 
+#%%
+
+"""
+this dataset already have the annotations of qrs 
+
+so, my work here is to calculate amplitude and SNR
+
+by differnt methods
+
+
+in the text:
+    
+    - show how we do the multilevel transform
+    - how this filters are made
+    - show the results
+    
+
+"""
+
 #%% support functions
 
 
@@ -29,6 +48,8 @@ def tresholding(N, details, level, type_threshold, type_thresholding):
         threshold = han_etal_threshold(N, details, level)
     elif type_threshold == 'alice':
         threshold = spc_shrink(details)
+        
+    print('threshold: ', threshold)
     
     if type_thresholding == 'hard':
         return_value = details
@@ -70,7 +91,7 @@ def han_etal_threshold(N, details, level, L=10):
     
     return threshold
 
-def spc_shrink(details, coef_d = 2):
+def spc_shrink(details, coef_d = 2.1):
     
     # padrao alpha = 1%
     
@@ -105,7 +126,13 @@ def sigma(details):
     
     mean_detail = np.median(details)
     
-    sigma = 1.4826 * np.median(details - mean_detail)
+    print(mean_detail)
+    
+    details -= mean_detail
+    
+    sigma = 1.4826 * np.median(np.abs(details))
+    
+    print(sigma)
     
     return sigma
 
@@ -148,6 +175,15 @@ filenames = glob.glob(f'{PATH}*.edf')
 # get data info class from mne
 
 file_info = mne.io.read_raw_edf(f'{PATH}/r01.edf')
+
+annotations = mne.read_annotations(f'{PATH}/r01.edf')
+
+#%%
+
+teste = annotations.to_data_frame()
+
+
+#%%
 
 # get specific data 
 
@@ -203,7 +239,14 @@ ax[0].legend()
 
 #%%
 
-data_filtered = tresholding(N, details, levels, 'alice', 'hard')
+# 'minimax', 'alice', 'han', 'universal'
+
+data_filtered = tresholding(N, 
+                            details, 
+                            levels, 
+                            'alice', 
+                            'hard'
+                            )
 
 #%%
 
@@ -212,15 +255,15 @@ reconstruct_data = HaarTransform(data_filtered, levels, f)
 filtered_signal = reconstruct_data.run_cascade_multiresolution_inv_transform()
 #%% Plot raw data 
 
-fig, ax = plt.subplots(3)
+fig, ax = plt.subplots(2, sharex = True)
 
-ax[0].plot(data[0][:intervalo], label='Direct')
+ax[0].plot(times[:intervalo], data[0][:intervalo], label='Direct')
 
 # ax.plot(times[:intervalo], data[0][:intervalo], label='Direct')
 
-ax[1].plot(details[:int(intervalo/2)])
+# ax[1].plot(details[:int(intervalo/2)])
 
-ax[2].plot(filtered_signal)
+ax[1].plot(times[:intervalo], filtered_signal)
 
 ax[0].grid()
 
@@ -228,7 +271,9 @@ ax[0].legend()
 
 #%%
 
-peaks, _ = find_peaks(np.abs(filtered_signal), height=0)
+peaks, _ = find_peaks(
+    np.square(np.abs(filtered_signal)), 
+    height=0)
 
 print()
 
@@ -242,23 +287,75 @@ ax.plot(filtered_signal)
 
 #%%
 
-norm_filtered_signal = filtered_signal / np.max(filtered_signal)
+pearson_coef = []
 
-linear_coef = np.array([0])
+i = 0
 
-for index in range(len(peaks) - 1):
-    
-    this_value = norm_filtered_signal[index]
-    next_value = norm_filtered_signal[index + 1]
-    
-    x = np.array([peaks[index], peaks[index + 1]])
-    y = np.array([this_value, next_value])
-    
-    A = np.vstack([x, np.ones(len(x))]).T
+delta_intervalo = 16
 
-    a, b = np.linalg.lstsq(A, y)[0]
+while i < len(filtered_signal):
     
-    linear_coef = np.append(linear_coef, np.array([a]))
+    interval = i + delta_intervalo
+    
+    partial_data = filtered_signal[i:interval]
+    
+    std_value = np.std(partial_data)
+    
+    if std_value == 0:
+        pearson_coef.append(0)
+    else:
+        
+        pearson_coef.append(
+            np.cov(partial_data) / std_value
+            )
+        
+    i =interval
+
+#%%
+
+plt.plot(pearson_coef)
+
+plt.plot(filtered_signal[peaks])
+
+#%%
+
+# #%%
+
+# amplitude_signal = np.array([])
+
+# for i in range(len(filtered_signal)):
+    
+#     if i == 0:
+        
+#         amplitude_signal = np.append(amplitude_signal, 0)
+        
+#     else:
+        
+#         app = filtered_signal[i+1] - filtered_signal[i]
+        
+#         amplitude_signal = np.append(amplitude_signal, app)
+
+# #%%
+
+# norm_filtered_signal = filtered_signal / np.max(filtered_signal)
+
+# linear_coef = np.array([0])
+
+# for index in range(len(peaks) - 1):
+    
+#     this_value = norm_filtered_signal[index]
+#     next_value = norm_filtered_signal[index + 1]
+    
+    
+    
+#     x = np.array([peaks[index], peaks[index + 1]])
+#     y = np.array([this_value, next_value])
+    
+#     A = np.vstack([x, np.ones(len(x))]).T
+
+#     a, b = np.linalg.lstsq(A, y)[0]
+    
+#     linear_coef = np.append(linear_coef, np.array([a]))
     
 #%%
 
