@@ -21,8 +21,7 @@ def filtering_coef(N, details, level, type_threshold, type_thresholding):
     elif type_threshold == 'alice':
         threshold = spc_shrink(details)
         
-    print('threshold: ', threshold)
-    
+
     if type_thresholding == 'hard':
         return_value = details
         
@@ -63,7 +62,7 @@ def han_etal_threshold(N, details, level, L=10):
     
     return threshold
 
-def spc_shrink(details, coef_d = 2.1):
+def spc_shrink(details, coef_d = 2.432):  #2.432
     
     # padrao alpha = 1%
     
@@ -98,12 +97,8 @@ def sigma(details):
     
     mean_detail = np.median(details)
     
-    print(mean_detail)
-    
     details -= mean_detail
     
     sigma = 1.4826 * np.median(np.abs(details))
-    
-    print(sigma)
     
     return sigma

@@ -12,8 +12,6 @@ Created on Wed Jul 19 20:55:39 2023
 
 import math
 import numpy as np
-# import seaborn as sns
-# import matplotlib.pyplot as plt
 
 #%% Haar Transform
 
@@ -192,7 +190,7 @@ class HaarTransform:
         loop_from = np.log2(self.N) + 1 - self.decomposition_level
         loop_to = np.log2(self.N) - 1
         
-        print(loop_from, loop_to)
+        # print(loop_from, loop_to)
         if loop_to < loop_from:
             
             producer_Hn = np.identity(self.N)
@@ -237,7 +235,7 @@ class HaarTransform:
         loop_from = np.log2(self.N) + 1 - self.decomposition_level
         loop_to = np.log2(self.N) - 1
         
-        print(loop_from, loop_to)
+        # print(loop_from, loop_to)
         if loop_to < loop_from:
             
             producer_Hn = np.identity(self.N)
@@ -304,34 +302,34 @@ class HaarTransform:
         return 
     
 
-#%% parameters / inputs from user
+# #%% parameters / inputs from user
 
-f = 1 / 2
+# f = 1 / 2
 
-# f = 1 / np.sqrt(2)
+# # f = 1 / np.sqrt(2)
 
-N = 4
+# N = 4
 
-v = np.array([5.25, 0.75, 2, 0.5]) 
-
-
-levels = 2
-
-haar = HaarTransform(v, levels, f)
-
-#%% run transform
-
-# inverse_transform_array = haar.run_inverse_transform()
+# v = np.array([5.25, 0.75, 2, 0.5]) 
 
 
-foward_transform_array = haar.run_foward_transform()
+# levels = 2
+
+# haar = HaarTransform(v, levels, f)
+
+# #%% run transform
+
+# # inverse_transform_array = haar.run_inverse_transform()
 
 
-multi_resolution = haar.run_cascade_multiresolution_transform()
+# foward_transform_array = haar.run_foward_transform()
 
-#%%
 
-inv_multi = haar.run_cascade_multiresolution_inv_transform()
+# multi_resolution = haar.run_cascade_multiresolution_transform()
+
+# #%%
+
+# inv_multi = haar.run_cascade_multiresolution_inv_transform()
 
 
 # #%%
